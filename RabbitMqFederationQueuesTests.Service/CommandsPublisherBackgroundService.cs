@@ -1,5 +1,6 @@
 ﻿using MassTransit;
 using Microsoft.Extensions.Options;
+using RabbitMqFederationQueuesTests.Contracts;
 
 namespace RabbitMqFederationQueuesTests.Service;
 
@@ -11,7 +12,7 @@ public class CommandsPublisherBackgroundService : BackgroundService
 
     public CommandsPublisherBackgroundService(IBus bus, ILogger<CommandsPublisherBackgroundService> logger, IOptions<RabbitMqConfiguration> appConfig)
     {
-        
+
         _bus = bus;
         _logger = logger;
         _appConfig = appConfig.Value;
@@ -21,10 +22,10 @@ public class CommandsPublisherBackgroundService : BackgroundService
     {
         await WaitUntilRabbitHasStarted();
 
-        if(_appConfig.SendSampleMessage)
+        if (_appConfig.SendSampleMessage)
         {
             await SendMessagesUnlessStopped(cancellationToken);
-        }        
+        }
     }
 
     private static async Task WaitUntilRabbitHasStarted()
@@ -34,44 +35,52 @@ public class CommandsPublisherBackgroundService : BackgroundService
 
     private async Task SendMessagesUnlessStopped(CancellationToken cancellationToken)
     {
-        var r = new Random();
-
         while (!cancellationToken.IsCancellationRequested)
         {
-            var durationInSeconds = r.Next(3, 11);
-            var numberOfMessagePerSecond = 1;
-            await SendMessagesAtGivenCadence(durationInSeconds, numberOfMessagePerSecond, cancellationToken);
+            await SendMessagesAtGivenCadence(cancellationToken);
+            await Task.Delay(1000, cancellationToken);
         }
     }
 
-    protected async Task SendMessagesAtGivenCadence(int durationInSeconds, int messagesPerSecond, CancellationToken cancellationToken)
+    protected async Task SendMessagesAtGivenCadence(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Sending {NumberOfMessage} messages per second during {Duration} seconds", messagesPerSecond, durationInSeconds);
+        _logger.LogInformation("Sending the 2 messages...");
 
         var random = new Random();
-        var initialTime = DateTime.Now;
-        while (!cancellationToken.IsCancellationRequested && (DateTime.Now - initialTime).Seconds <= durationInSeconds)
-        {
-            await SendCreateUserCommand(random, cancellationToken);
+        var entrophy = random.Next();
 
-            var delay = 1000 / messagesPerSecond;
-            await Task.Delay(delay, cancellationToken);
-        }
+        await SendCreateUserCommand(entrophy, cancellationToken);
+        await SendCreateAccountCommand(entrophy, cancellationToken);
     }
 
-    private async Task SendCreateUserCommand(Random random, CancellationToken cancellationToken)
+    private async Task SendCreateUserCommand(int entrophy, CancellationToken cancellationToken)
     {
-        var entrophy = random.Next();
-        var message = new Contracts.CreateUserCommand
+        var message = new CreateAccountCommand
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Account {entrophy}",
+            Users = entrophy,
+        };
+
+        var client = _bus.CreateRequestClient<CreateUserCommand>();
+        _logger.LogInformation("Sended message of type {MessageType} with content{Message}", message.GetType().Name, message);
+        var response = await client.GetResponse<CreateUserCommandResponse>(message, cancellationToken, RequestTimeout.After(m: 5));
+        _logger.LogInformation("Received response from server of type {MessageType} with content {Message}", response.Message.GetType().Name, response.Message);
+    }
+
+    private async Task SendCreateAccountCommand(int entrophy, CancellationToken cancellationToken)
+    {
+        var message = new CreateUserCommand
         {
             Id = Guid.NewGuid(),
             FirstName = $"FN {entrophy}",
             LastName = $"LN {entrophy} from Datacenter {_appConfig.DatacenterId}",
         };
 
-        await _bus.Send(message, cancellationToken);
+        var client = _bus.CreateRequestClient<CreateAccountCommand>();
         _logger.LogInformation("Sended message of type {MessageType} with content{Message}", message.GetType().Name, message);
+        var response = await client.GetResponse<CreateAccountCommandResponse>(message, cancellationToken, RequestTimeout.After(m: 5));
+        _logger.LogInformation("Received response from server of type {MessageType} with content {Message}", response.Message.GetType().Name, response.Message);
     }
-
 }
 

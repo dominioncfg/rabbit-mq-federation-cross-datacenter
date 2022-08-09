@@ -32,7 +32,7 @@ public class DeployFederationTopologyBackgroundService : BackgroundService
             Password = _appConfig.Password,
             Port = _appConfig.Port,
         };
-        var currentDatacenterInboxName = ConfigurationConstants.GetInboxExchangeName(_appConfig.DatacenterId);
+        var currentDatacenterInboxName = ConfigurationConstants.Messaging.GetInboundExchangeName(_appConfig.DatacenterId);
 
         //****Exchanges and bindings
         using var connection = rabbitFactory.CreateConnection();
@@ -40,14 +40,23 @@ public class DeployFederationTopologyBackgroundService : BackgroundService
         var externalDatacenters = _appConfig.AllDatacentersIds
             .Where(x => x != _appConfig.DatacenterId)
             .ToArray();
+        
+        //***Outbound of this datacenter
+        var currentDatacentetOutbound = ConfigurationConstants.Messaging.GetOutboundExchangeName(_appConfig.DatacenterId);
+        channel.ExchangeDeclare(currentDatacentetOutbound, ExchangeType.Fanout, true, false);
 
         //**Create a copy of extenal datacenters in This datacenter and BindidTo
         foreach (var item in externalDatacenters)
         {
-            var copyExchangeName = ConfigurationConstants.GetOutboundExchangeName(item);
+            var copyExchangeName = ConfigurationConstants.Messaging.GetOutboundExchangeName(item);
             channel.ExchangeDeclare(copyExchangeName, ExchangeType.Fanout, true, false);
             channel.ExchangeBind(currentDatacenterInboxName, copyExchangeName, "");
         }
+
+        //**Broadcast
+        channel.ExchangeDeclare(ConfigurationConstants.Messaging.BroadCastExchangeName, ExchangeType.Fanout, true, false);
+        channel.ExchangeBind(ConfigurationConstants.Messaging.GetInboundExchangeName(_appConfig.DatacenterId), ConfigurationConstants.Messaging.BroadCastExchangeName, "");
+        channel.ExchangeBind(ConfigurationConstants.Messaging.GetOutboundExchangeName(_appConfig.DatacenterId), ConfigurationConstants.Messaging.BroadCastExchangeName, "");
     }
 }
 

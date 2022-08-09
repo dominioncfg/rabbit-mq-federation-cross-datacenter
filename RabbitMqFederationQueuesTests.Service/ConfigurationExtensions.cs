@@ -19,29 +19,34 @@ public static class ConfigurationExtensions
 
             busConfigurator.SetKebabCaseEndpointNameFormatter();
             busConfigurator.AddConsumers(entryAssembly);
+
             busConfigurator.UsingRabbitMq((context, cfg) =>
-            {
-                //cfg.DeployTopologyOnly = true;
+            {            
+                cfg.UseCrossDatacenterRpcFilters(context);
+
                 cfg.Host(rabbitMqConfig.Host, rabbitMqConfig.Port, "/", h =>
                  {
                      h.Username(rabbitMqConfig.User);
                      h.Password(rabbitMqConfig.Password);
                  });
 
-                var queueName = ConfigurationConstants.GetInboxExchangeName(rabbitMqConfig.DatacenterId);
+                var queueName = ConfigurationConstants.Messaging.GetInboundExchangeName(rabbitMqConfig.DatacenterId);
                 cfg.ReceiveEndpoint(queueName, e =>
                 {
                     e.ConfigureConsumer<CreateUserCommandConsumer>(context);
+                    e.ConfigureConsumer<CreateAccountCommandConsumer>(context);
+                    e.ConfigureCrossDatacenterRpcConsumer(context);
                 });
             });
 
-            ConfigureSendCommands(rabbitMqConfig);
+            ConfigureSendCommands();
         });
     }
 
-    private static void ConfigureSendCommands(RabbitMqConfiguration rabbitMqConfig)
+    private static void ConfigureSendCommands()
     {
-        EndpointConvention.Map<CreateUserCommand>(new Uri($"exchange:{ConfigurationConstants.GetOutboundExchangeName(rabbitMqConfig.DatacenterId)}"));
+        var exchangeName = ConfigurationConstants.Messaging.BroadCastExchangeName;
+        EndpointConvention.Map<CreateUserCommand>(new Uri($"exchange:{exchangeName}"));
+        EndpointConvention.Map<CreateAccountCommand>(new Uri($"exchange:{exchangeName}"));
     }
-
 }
