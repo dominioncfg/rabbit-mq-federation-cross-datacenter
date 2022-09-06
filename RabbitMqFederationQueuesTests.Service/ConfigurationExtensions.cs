@@ -22,7 +22,7 @@ public static class ConfigurationExtensions
 
             busConfigurator.UsingRabbitMq((context, cfg) =>
             {            
-                cfg.UseCrossDatacenterRpcFilters(context);
+                cfg.UseCrossDatacenterRpcFilters(context, rabbitMqConfig);
 
                 cfg.Host(rabbitMqConfig.Host, rabbitMqConfig.Port, "/", h =>
                  {

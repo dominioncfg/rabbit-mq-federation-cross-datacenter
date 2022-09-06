@@ -9,9 +9,9 @@ public static class ConfigurationConstants
         public const string BroadCastExchangeName = "broadcast";
         public static class Headers
         {
-            public const string ResponseFederatedQueue = "R_FederatedQueue";
-            public const string RpcLocalQueue = "ResponseQueue";
-            public const string RpcRequestId = "R_Id";
+            public static string DatacenterId => "Request_Datacenter_Id";
+            public static string RpcLocalQueue => "ResponseQueue";
+            public static string RpcRequestId => "R_Id";
         }
 
         public static string GetOutboundExchangeName(string datacenterId)

@@ -8,15 +8,19 @@ public class CrossDatacenterRpcReceiveFilterConfigurationObserver :
     ConfigurationObserver,
     IMessageConfigurationObserver
 {
-    public CrossDatacenterRpcReceiveFilterConfigurationObserver(IConsumePipeConfigurator receiveEndpointConfigurator)
+    private readonly RabbitMqConfiguration _rabbitMqConfiguration;
+
+    public CrossDatacenterRpcReceiveFilterConfigurationObserver(IConsumePipeConfigurator receiveEndpointConfigurator,
+        RabbitMqConfiguration rabbitMqConfiguration)
         : base(receiveEndpointConfigurator)
     {
         Connect(this);
+        this._rabbitMqConfiguration = rabbitMqConfiguration;
     }
 
     public void MessageConfigured<TMessage>(IConsumePipeConfigurator configurator)
         where TMessage : class
     {
-        configurator.AddPipeSpecification(new CrossDatacenterRpcReceiveFilterPipeSpecification<TMessage>());
+        configurator.AddPipeSpecification(new CrossDatacenterRpcReceiveFilterPipeSpecification<TMessage>(_rabbitMqConfiguration));
     }
 }

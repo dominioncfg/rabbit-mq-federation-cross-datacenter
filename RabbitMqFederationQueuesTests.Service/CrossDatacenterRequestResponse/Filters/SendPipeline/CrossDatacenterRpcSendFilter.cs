@@ -38,9 +38,6 @@ public class CrossDatacenterRpcSendFilter<T> :
 
     private void AddCrossDatacenterRequestRequiredHeaders(SendContext<T> context)
     {
-        var respondToFederatedExchangeName = _appConfig.IsTheMainDatacenter() ?
-                    ConfigurationConstants.Messaging.GetInboundExchangeName(_appConfig.DatacenterId) :
-                    ConfigurationConstants.Messaging.GetOutboundExchangeName(_appConfig.MainDatacenter);
-        context.Headers.Set(ConfigurationConstants.Messaging.Headers.ResponseFederatedQueue, $"exchange:{respondToFederatedExchangeName}");
+        context.Headers.Set(ConfigurationConstants.Messaging.Headers.DatacenterId, _appConfig.DatacenterId);
     }
 }

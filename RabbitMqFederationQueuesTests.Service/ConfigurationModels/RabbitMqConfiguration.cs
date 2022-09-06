@@ -18,5 +18,10 @@ public record RabbitMqConfiguration
                MainDatacenter == DatacenterId;
     }
 
+    public bool IsCurrentDatacenter(string datacenterId)
+    {
+        return DatacenterId == datacenterId;
+    }
+
     public string[] AllDatacentersIds { get; init; } = Array.Empty<string>();
 }

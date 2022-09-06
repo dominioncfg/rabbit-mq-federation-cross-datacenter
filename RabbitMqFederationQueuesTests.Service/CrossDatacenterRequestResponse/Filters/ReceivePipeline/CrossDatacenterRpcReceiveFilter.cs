@@ -9,6 +9,15 @@ public class CrossDatacenterRpcReceiveFilter<T> :
     IFilter<ConsumeContext<T>>
     where T : class
 {
+    private readonly RabbitMqConfiguration _appConfig;
+
+
+    public CrossDatacenterRpcReceiveFilter(RabbitMqConfiguration appConfig)
+    {
+        _appConfig = appConfig;
+    }
+
+
     public void Probe(ProbeContext context)
     {
         context.CreateFilterScope(nameof(CrossDatacenterRpcReceiveFilter<T>));
@@ -33,13 +42,16 @@ public class CrossDatacenterRpcReceiveFilter<T> :
         return (context.Message is ICrossDatacenterRpcRequest);
     }
 
-    private static Uri GetResponseAddress(ConsumeContext context)
+    private Uri GetResponseAddress(ConsumeContext context)
     {
-        if (!context.Headers.TryGetHeader(ConfigurationConstants.Messaging.Headers.ResponseFederatedQueue,
-            out var federatedQueueAddress) || !(federatedQueueAddress is string))
-            throw new InvalidOperationException("Cross datacenter request Error. Header {ConfigurationConstants.Messaging.Headers.ResponseFederatedQueue} dont exist.");
+        if (!context.Headers.TryGetHeader(ConfigurationConstants.Messaging.Headers.DatacenterId,
+            out var datacenterId) || !(datacenterId is string))
+            throw new InvalidOperationException($"Cross datacenter request Error. Header {ConfigurationConstants.Messaging.Headers.DatacenterId} dont exist.");
 
-        return new Uri((string)federatedQueueAddress);
+        var respondToFederatedExchangeName = _appConfig.IsCurrentDatacenter($"{datacenterId}") ?
+                    ConfigurationConstants.Messaging.GetInboundExchangeName(_appConfig.DatacenterId) :
+                    ConfigurationConstants.Messaging.GetOutboundExchangeName(_appConfig.MainDatacenter);
+        return new Uri($"exchange:{respondToFederatedExchangeName}");
     }
 
     private static JsonEnvelopeHeaders StoreCrossDatacenterRequiredHeaders(ConsumeContext<T> context)
