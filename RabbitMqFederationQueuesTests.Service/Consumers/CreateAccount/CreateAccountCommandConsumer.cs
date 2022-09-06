@@ -1,4 +1,7 @@
+using GreenPipes;
 using MassTransit;
+using MassTransit.ConsumeConfigurators;
+using MassTransit.Definition;
 using Microsoft.Extensions.Options;
 using RabbitMqFederationQueuesTests.Contracts;
 
@@ -19,7 +22,7 @@ public class CreateAccountCommandConsumer : IConsumer<CreateAccountCommand>
 
     public async Task Consume(ConsumeContext<CreateAccountCommand> context)
     {
-        if(!_config.IsTheMainDatacenter())
+        if (!_config.IsTheMainDatacenter())
             return;
 
         _logger.LogInformation("Received Text: {Text}", context.Message);

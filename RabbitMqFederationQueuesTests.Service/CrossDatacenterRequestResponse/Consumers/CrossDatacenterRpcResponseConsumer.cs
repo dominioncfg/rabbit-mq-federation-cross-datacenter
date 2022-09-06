@@ -1,4 +1,7 @@
-﻿using MassTransit;
+﻿using GreenPipes;
+using MassTransit;
+using MassTransit.ConsumeConfigurators;
+using MassTransit.Definition;
 using Newtonsoft.Json;
 using RabbitMqFederationQueuesTests.Contracts;
 
@@ -13,13 +16,20 @@ public class CrossDatacenterRpcResponseConsumer : IConsumer<CrossDatacenterRpcRe
         var destinationAddress = context.Headers.Get<string>(ConfigurationConstants.Messaging.Headers.RpcLocalQueue)!;
         var requestId = context.Headers.Get<string>(ConfigurationConstants.Messaging.Headers.RpcRequestId)!;
 
-        await context.Send(new Uri(destinationAddress), deserializedObject, deserializedObject.GetType(), x =>
+        var pipe = Pipe.New<SendContext>(x =>
         {
-            x.Headers.Set(ConfigurationConstants.Messaging.Headers.RpcRequestId, x.RequestId);
-            x.RequestId = Guid.Parse(requestId);
-            x.DestinationAddress = new Uri(destinationAddress);
-            x.ResponseAddress = new Uri(destinationAddress);
+            x.UseExecute(y => AddHeadersToRequest(y, requestId, destinationAddress));
         });
+
+        await context.Send(new Uri(destinationAddress), deserializedObject, deserializedObject.GetType(), pipe);
+    }
+
+    private static void AddHeadersToRequest(SendContext x, string requestId, string destinationAddress)
+    {
+        x.Headers.Set(ConfigurationConstants.Messaging.Headers.RpcRequestId, x.RequestId.ToString());
+        x.RequestId = Guid.Parse(requestId);
+        x.DestinationAddress = new Uri(destinationAddress);
+        x.ResponseAddress = new Uri(destinationAddress);
     }
 }
 

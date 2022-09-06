@@ -1,4 +1,5 @@
-﻿using MassTransit;
+﻿using GreenPipes;
+using MassTransit;
 using MassTransit.Serialization;
 using RabbitMqFederationQueuesTests.Contracts;
 
@@ -37,17 +38,17 @@ public class CrossDatacenterRpcReceiveFilter<T> :
         if (!context.Headers.TryGetHeader(ConfigurationConstants.Messaging.Headers.ResponseFederatedQueue,
             out var federatedQueueAddress) || !(federatedQueueAddress is string))
             throw new InvalidOperationException("Cross datacenter request Error. Header {ConfigurationConstants.Messaging.Headers.ResponseFederatedQueue} dont exist.");
-        
+
         return new Uri((string)federatedQueueAddress);
     }
 
-    private static ReadOnlyDictionaryHeaders StoreCrossDatacenterRequiredHeaders(ConsumeContext<T> context)
+    private static JsonEnvelopeHeaders StoreCrossDatacenterRequiredHeaders(ConsumeContext<T> context)
     {
         var allHeaders = context.Headers.ToDictionary(x => x.Key, x => x.Value);
 
-        allHeaders.Add(ConfigurationConstants.Messaging.Headers.RpcLocalQueue, context.ResponseAddress!.ToString());
-        allHeaders.Add(ConfigurationConstants.Messaging.Headers.RpcRequestId, context.RequestId!);
+        allHeaders.Add(ConfigurationConstants.Messaging.Headers.RpcLocalQueue, context.ResponseAddress!);
+        allHeaders.Add(ConfigurationConstants.Messaging.Headers.RpcRequestId, context.RequestId.ToString()!);
 
-        return new ReadOnlyDictionaryHeaders(context.SerializerContext, allHeaders);
+        return new JsonEnvelopeHeaders(allHeaders);
     }
 }

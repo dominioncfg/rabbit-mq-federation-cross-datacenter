@@ -1,4 +1,5 @@
-﻿using MassTransit;
+﻿using GreenPipes;
+using MassTransit;
 using Microsoft.Extensions.Options;
 using RabbitMqFederationQueuesTests.Contracts;
 
@@ -12,12 +13,12 @@ public class CrossDatacenterRpcSendFilter<T> :
     private readonly RabbitMqConfiguration _appConfig;
 
 
-    public CrossDatacenterRpcSendFilter(IOptions<RabbitMqConfiguration> appConfig) 
+    public CrossDatacenterRpcSendFilter(IOptions<RabbitMqConfiguration> appConfig)
     {
         _appConfig = appConfig.Value;
     }
 
-    public void Probe(ProbeContext context) 
+    public void Probe(ProbeContext context)
     {
         context.CreateFilterScope(nameof(CrossDatacenterRpcSendFilter<T>));
     }

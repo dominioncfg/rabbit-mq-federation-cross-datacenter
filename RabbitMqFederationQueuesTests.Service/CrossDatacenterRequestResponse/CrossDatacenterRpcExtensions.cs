@@ -1,4 +1,5 @@
 ﻿using MassTransit;
+using MassTransit.RabbitMqTransport;
 
 namespace RabbitMqFederationQueuesTests.Service;
 

@@ -1,5 +1,5 @@
-﻿using MassTransit;
-using MassTransit.Configuration;
+﻿using GreenPipes;
+using MassTransit;
 
 namespace RabbitMqFederationQueuesTests.Service;
 

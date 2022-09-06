@@ -1,5 +1,6 @@
 ﻿using MassTransit;
-using MassTransit.Configuration;
+using MassTransit.ConsumeConfigurators;
+using MassTransit.PipeConfigurators;
 
 namespace RabbitMqFederationQueuesTests.Service;
 

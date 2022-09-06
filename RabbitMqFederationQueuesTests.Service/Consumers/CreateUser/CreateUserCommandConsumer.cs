@@ -1,8 +1,11 @@
+using GreenPipes;
 using MassTransit;
+using MassTransit.ConsumeConfigurators;
+using MassTransit.Definition;
 using Microsoft.Extensions.Options;
 using RabbitMqFederationQueuesTests.Contracts;
 
-namespace RabbitMqFederationQueuesTests.Service; 
+namespace RabbitMqFederationQueuesTests.Service;
 
 public class CreateUserCommandConsumer : IConsumer<CreateUserCommand>
 {
